@@ -12,6 +12,25 @@ provider "aws" {
   region = var.aws_region  # Change to your desired region
 }
 
+# get latest ami always
+data "aws_ami" "latest_amazon_linux" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*"]  # Filter to select Amazon Linux 2 AMIs
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+  owners = ["amazon"]
+}
+
+
 module "vpc" {
   source = "./modules/compute/vpc"
   vpc_cidr_block = var.vpc_cidr_block
@@ -32,7 +51,7 @@ module "load_balancer" {
 
 module "autoscaling" {
   source = "./modules/compute/asg"
-  ami_id = var.ami_id
+  ami_id = data.aws_ami.latest_amazon_linux.id
   instance_type = var.instance_type
   ssh_keypair_name = var.ssh_keypair_name
   root_volume_size = var.root_volume_size
